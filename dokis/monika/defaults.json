@@ -1,0 +1,58 @@
+{
+  "groups": [
+    [ "forward" ],
+    [ "lean" ]
+  ],
+
+  "folders": [
+    {
+      "name": "body",
+      "bypass": [ "lean" ],
+      "max": 2,
+      "default": [ "monika_forward_uniform_left_point.png", "monika_forward_uniform_right_down.png" ],
+      "z-index": 0
+    },
+    {
+      "name": "head",
+      "bypass": [],
+      "max": 1,
+      "default": [ "monika_forward_facebase.png" ],
+      "z-index": 1
+    },
+    {
+      "name": "nose",
+      "bypass": [],
+      "max": 1,
+      "default": [ "monika_forward_nose_n1.png" ],
+      "z-index": 2
+    },
+    {
+      "name": "mouth",
+      "bypass": [],
+      "max": 1,
+      "default": [ "monika_forward_mouth_ma.png" ],
+      "z-index": 3
+    },
+    {
+      "name": "eyes",
+      "bypass": [],
+      "max": 1,
+      "default": [ "monika_forward_eyes_e1a.png" ],
+      "z-index": 4
+    },
+    {
+      "name": "brows",
+      "bypass": [],
+      "max": 1,
+      "default": [ "monika_forward_eyebrows_b1a.png" ],
+      "z-index": 5
+    },
+    {
+      "name": "extra",
+      "bypass": [],
+      "max": -1,
+      "default": [],
+      "z-index": 6
+    }
+  ]
+}

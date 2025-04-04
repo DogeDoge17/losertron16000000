@@ -1,0 +1,58 @@
+{
+  "groups": [
+    [ "forward", "ff", "turned"],
+    [ "sad" , "fs"]
+  ],
+
+  "folders": [
+    {
+      "name": "body",
+      "bypass": [ "cross" ],
+      "max": 2,
+      "default": [ "natsuki_turned_uniform_left_down.png", "natsuki_turned_uniform_right_down.png" ],
+      "z-index": 0
+    },
+    {
+      "name": "head",
+      "bypass": [],
+      "max": 1,
+      "default": [ "natsuki_face_forward.png" ],
+      "z-index": 1
+    },
+    {
+      "name": "nose",
+      "bypass": [],
+      "max": 1,
+      "default": [ "natsuki_ff_nose_n1.png" ],
+      "z-index": 2
+    },
+    {
+      "name": "mouth",
+      "bypass": [],
+      "max": 1,
+      "default": [ "natsuki_ff_mouth_ma.png" ],
+      "z-index": 3
+    },
+    {
+      "name": "eyes",
+      "bypass": [],
+      "max": 1,
+      "default": [ "natsuki_ff_eyes_e1a.png" ],
+      "z-index": 4
+    },
+    {
+      "name": "brows",
+      "bypass": [],
+      "max": 1,
+      "default": [ "natsuki_ff_eyebrows_b1a.png" ],
+      "z-index": 5
+    },
+    {
+      "name": "extra",
+      "bypass": [],
+      "max": -1,
+      "default": [],
+      "z-index": 6
+    }
+  ]
+}
