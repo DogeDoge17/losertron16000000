@@ -51,6 +51,12 @@ target_include_directories(losertron PUBLIC
 
 target_link_libraries(losertron PUBLIC imgui glfw glad)
 
+# move sprites to output
+set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dokis)
+set(DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/)
+file(COPY ${SOURCE_DIR} DESTINATION ${DEST_DIR})
+
+
 # Platform-specific dependencies
 
 if (APPLE)
