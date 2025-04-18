@@ -1,2 +1,2 @@
 # ImLOSERTRON16000000
- now in linux
+ being remade for linux (NOT DONE )
