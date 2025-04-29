@@ -6,7 +6,7 @@ void update_warnings(const DokiExpression* item) {
     if (item == nullptr) {
         std::map<std::vector<std::string>, int> occurrences;
 
-        for (const auto & selectedExpression : selectedExpressions) {
+        for (const auto& selectedExpression : selectedExpressions) {
             std::vector<std::string> group;
             if constexpr (!girlDefaults.Groups.empty()) {
                 for (const auto& ids : girlDefaults.Groups) {

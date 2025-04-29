@@ -1,9 +1,7 @@
 #include "bitmap.hpp"
 
-#include <iostream>
 
-#include <GL/gl.h> // or the appropriate OpenGL header
-#include <iostream>
+
 
 GLuint texture_send(const uint8_t* pixels, const int& width, const int& height) {
 		GLuint texture = 0;

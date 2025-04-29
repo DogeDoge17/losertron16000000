@@ -1,7 +1,8 @@
 #pragma once
 #include <filesystem>
-#include <imgui.h>
 #include <glad/glad.h>
+#include <GL/gl.h>
+#include <iostream>
 #include <stb_image.h>
 
 struct Bounds {
