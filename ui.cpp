@@ -136,7 +136,7 @@ void draw_expressions(const float room) {
 		ImGui::BeginChild("expressions", ImVec2(0, 0), true, ImGuiWindowFlags_ChildWindow);
 		std::vector<DokiExpression> &expressions = all_expressions[expressionGroups[selectedExpressionGroup]];
 
-		constexpr float targetSize = 100.0f;
+		const float targetSize = 100.0f * zoom;
 		const float spacingX = ImGui::GetStyle().ItemSpacing.x;
 
 		const int columns = std::clamp(
@@ -151,7 +151,8 @@ void draw_expressions(const float room) {
 				ImVec2 uv1 = ImVec2(expressions[i].bounds.u0, expressions[i].bounds.v0);
 				ImVec2 uv0 = ImVec2(expressions[i].bounds.u1, expressions[i].bounds.v1);
 
-				if (const float size = ImGui::GetContentRegionAvail().x; ImGui::ImageButton( "expressionButton", expressions[i].texture.id, ImVec2(size, size), uv0, uv1, expressions[i].backgroundColor , ImVec4(1, 1, 1, 1))) {
+																															// ImGui::ImageButton(const char* str_id, ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& bg_col, const ImVec4& tint_col)
+				if (const float size = ImGui::GetContentRegionAvail().x; ImGui::ImageButton("expressionButton", (ImTextureID)expressions[i].texture.id, ImVec2(size, size), uv0, uv1, expressions[i].backgroundColor , ImVec4(1, 1, 1, 1))) {
 					expression_click(&expressions[i]);
 					std::cout << "pressed button " << i << std::endl;
 				}

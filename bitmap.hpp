@@ -10,10 +10,12 @@ struct Bounds {
 };
 
 struct Texture {
-    GLuint id;
-    GLsizei width, height;
-    GLenum type;
+    GLuint id = 0;
+    GLsizei width = 0, height = 0;
+    GLenum type = 0;
 };
+
+inline GLuint marvin;
 
 GLuint texture_send(const uint8_t* pixels, const int& width, const int& height);
 bool load_texture(const std::filesystem::path& path,  uint8_t*& pixels, int& width, int& height);

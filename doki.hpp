@@ -11,15 +11,15 @@
 #include "bitmap.hpp"
 #include "ui.hpp"
 
-struct DokiExpression {
-		Texture texture;
-		Bounds bounds;
-		std::filesystem::path uri;
-		ImColor backgroundColor;
-		std::string category;
+struct DokiExpression {  
+   Texture texture{}; // Initialize texture  
+   Bounds bounds{};   // Initialize bounds  
+   std::filesystem::path uri;  
+   ImColor backgroundColor{}; // Initialize backgroundColor  
+   std::string category;  
 
-		DokiExpression(std::filesystem::path path) : uri(path) {}
-		DokiExpression() {}
+   DokiExpression(std::filesystem::path path) : uri(path), texture{}, bounds{}, backgroundColor{} {} 
+	 DokiExpression() : uri{}, texture{}, bounds{  }, backgroundColor{} {}
 };
 
 struct GirlieFolder {

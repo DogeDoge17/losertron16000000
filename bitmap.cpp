@@ -1,6 +1,8 @@
 #include "bitmap.hpp"
 
+void init_doki_fbo() {
 
+}
 
 
 GLuint texture_send(const uint8_t* pixels, const int& width, const int& height) {

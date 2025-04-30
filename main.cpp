@@ -8,12 +8,29 @@
 #include "doki.hpp"
 #include "ui.hpp"
 
-int main() {
+static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{	
+		if ((key == GLFW_KEY_EQUAL) && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+				zoom += 0.15; 
+				std::cout << zoom << std::endl;
+		}
+
+		if ((key == GLFW_KEY_MINUS) && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+				zoom -= 0.15; 
+				std::cout << zoom << std::endl;
+		}
+		if (zoom < 0.001) {
+				zoom = 0.001;
+		}
+}
+
+
+int main(int argc, char** argv) {
 		glfwInit();
 		GLFWwindow* window = glfwCreateWindow(800, 450, "LOSERTRON16000000", nullptr, nullptr);
 		glfwMakeContextCurrent(window);
 		glfwSwapInterval(1); 
-
+		glfwSetKeyCallback(window, KeyCallback);
 		gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
 
 		IMGUI_CHECKVERSION(); 
