@@ -12,10 +12,10 @@
 #include "ui.hpp"
 
 struct DokiExpression {  
-   Texture texture{}; // Initialize texture  
-   Bounds bounds{};   // Initialize bounds  
+   Texture texture{}; 
+   Bounds bounds{};   
    std::filesystem::path uri;  
-   ImColor backgroundColor{}; // Initialize backgroundColor  
+   ImColor backgroundColor{};  
    std::string category;  
 
    DokiExpression(std::filesystem::path path) : uri(path), texture{}, bounds{}, backgroundColor{} {} 
