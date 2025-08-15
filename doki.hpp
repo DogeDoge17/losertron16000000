@@ -12,10 +12,10 @@
 #include "ui.hpp"
 
 struct DokiExpression {  
-   Texture texture{}; 
-   Bounds bounds{};   
+   Texture texture{};
+   Bounds bounds{};
    std::filesystem::path uri;  
-   ImColor backgroundColor{};  
+   ImColor backgroundColor{};
    std::string category;  
 
    DokiExpression(std::filesystem::path path) : uri(path), texture{}, bounds{}, backgroundColor{} {} 
@@ -59,5 +59,7 @@ inline std::vector<DokiExpression*> selectedExpressions;
 
 inline std::unordered_map<std::string, std::vector<DokiExpression>> all_expressions;
 
+void sort_expressions();
+void construct_doki();
 void init_toutes_dokis();
 void init_doki();

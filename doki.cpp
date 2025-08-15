@@ -1,21 +1,26 @@
 #include "doki.hpp"
+#include <cstdint>
 
 void sort_expressions() {
+	// var folderIndexMap = _girlDefaults.Folders.ToDictionary(folder => folder.Name, folder => folder.ZIndex);
+	//_selectedExpressions = _selectedExpressions.OrdeBy(item => folderIndexMap.TryGetValue(item.Category, out int zIndex) ? zIndex : int.MaxValue).ToList();
+
 	std::unordered_map<std::string, int> folderIndexMap;
-	for (const auto &folder: girlDefaults.Folders) {
-		folderIndexMap[folder.Name] = folder.ZIndex;
+	folderIndexMap.reserve(girlDefaults.Folders.size());
+	for (const auto& folder : girlDefaults.Folders) {
+		folderIndexMap.emplace(folder.Name, folder.ZIndex);
 	}
 
-	std::ranges::sort(selectedExpressions,
-	                  [&folderIndexMap](const DokiExpression *a, const DokiExpression *b) {
-		                  int zIndexA = INT_MAX;
-		                  int zIndexB = INT_MAX;
-		                  if (const auto itA = folderIndexMap.find(a->category); itA != folderIndexMap.end())
-			                  zIndexA = itA->second;
-		                  if (const auto itB = folderIndexMap.find(b->category); itB != folderIndexMap.end())
-			                  zIndexB = itB->second;
-		                  return zIndexA < zIndexB;
-	                  });
+	std::ranges::stable_sort(selectedExpressions,
+	                         [&](const DokiExpression* a, const DokiExpression* b) {
+		                         const int za = (a && folderIndexMap.contains(a->category))
+			                                        ? folderIndexMap[a->category]
+			                                        : INT_MAX;
+		                         const int zb = (b && folderIndexMap.contains(b->category))
+			                                        ? folderIndexMap[b->category]
+			                                        : INT_MAX;
+		                         return za < zb;
+	                         });
 }
 
 void load_defaults() {
@@ -51,7 +56,6 @@ void load_defaults() {
 				expression.backgroundColor = GREEN;
 				selectedExpressions.push_back(&expression);
 			}
-
 
 	//megaList.ForEach(image => { if (defaults.Contains(new Path(image.Uri).FileName.ToString())) { _selectedExpressions.Add(image); image.BackgroundColor = Colors.Green; } });
 	sort_expressions();
@@ -107,8 +111,12 @@ void load_image_data() {
 		all_expressions[expressionName] = std::vector<DokiExpression>();
 		for (const auto &expression: std::filesystem::directory_iterator(folder.path()))
 			all_expressions[expressionName].emplace_back(expression.path());
+		for (auto& exp : all_expressions[expressionName]) {
+			exp.category = expressionName;
+		}
 	}
 
+	//todo: ensure atomic
 	std::vector<std::unique_ptr<std::pair<DokiExpression *, uint8_t *> > > pixels = std::vector<std::unique_ptr<
 		std::pair<DokiExpression *, uint8_t *> > >();
 
@@ -131,9 +139,40 @@ void load_image_data() {
 	}
 }
 
+void construct_doki() {
+	std::string::npos;
+	bool natsdown = false;
+	int natDownIndex = -1;
+	if (girlsv[girl][0] == 'n') {
+		for (size_t i = 0; i < selectedExpressions.size(); i++) {
+			if (selectedExpressions[i]->uri.string().find("crossed") != std::string::npos) {
+				natDownIndex = i;
+				break;
+			}
+		}
+	}
+	natsdown = natDownIndex != -1;
+
+	placing_prepare();
+	for (size_t i = 0; i < selectedExpressions.size(); i++) {
+		auto &expression = selectedExpressions[i];
+		ImVec2 position = ImVec2(0, 0);
+
+		if (natsdown && i != natDownIndex) {
+			// hardcoded offset for crossed arm natsuki
+			position = ImVec2(-18, -22);
+		}
+
+		place_image(expression->texture.id, position);
+	}
+
+	placing_finish();
+}
+
 void init_doki() {
 	load_image_data();
 	load_defaults();
+	construct_doki();
 }
 
 void init_toutes_dokis() {
@@ -145,7 +184,6 @@ void init_toutes_dokis() {
 	//}
 	//girlPicker.SelectedIndexChanged += ReinitDoki;
 	//girlPicker.SelectedIndex = girlPicker.Items.IndexOf(_girl.First().ToString().ToUpper() + _girl.Substring(1));
-
 
 	auto dirIter = std::filesystem::directory_iterator("dokis");
 
@@ -164,12 +202,12 @@ void init_toutes_dokis() {
 			break;
 
 		size_t len;
-		girlsv[i] = static_cast<char *>(
-			malloc(len = sizeof(char) * strlen(dir.path().filename().string().c_str()) + 1));
+		girlsv[i] = static_cast<char *>(malloc(len = sizeof(char) * strlen(dir.path().filename().string().c_str()) + 1));
 		girlsvDISP[i] = static_cast<char *>(malloc(len + 1));
 		strcpy(girlsv[i], dir.path().filename().string().c_str());
 		strcpy(girlsvDISP[i], girlsv[i]);
 
+		// epic bias towards natsuki for her to be the default doki
 		if (girlsv[i][0] == 'n')
 			girl = i;
 
@@ -178,10 +216,6 @@ void init_toutes_dokis() {
 
 		i++;
 	}
-	/*for(size_t i = 0; i < girlsc; i++) {
-			printf("%s\n", girlsv[i]);
-			printf("%s\n", girlsvDISP[i]);
-	}*/
 }
 
 

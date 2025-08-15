@@ -11,7 +11,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG 3.3.8
 )
-set(GLFW_USE_WAYLAND ON CACHE BOOL "" FORCE)
+#set(GLFW_USE_WAYLAND ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
 # Glad

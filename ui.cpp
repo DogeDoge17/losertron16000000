@@ -102,6 +102,8 @@ void expression_click(DokiExpression* expression)
 		selectedExpressions.erase(location);
 	}
 
+	sort_expressions();
+	construct_doki();
 	// await Task.Run(() => ConstructDoki(false));
 }
 
@@ -151,10 +153,8 @@ void draw_expressions(const float room) {
 				ImVec2 uv1 = ImVec2(expressions[i].bounds.u0, expressions[i].bounds.v0);
 				ImVec2 uv0 = ImVec2(expressions[i].bounds.u1, expressions[i].bounds.v1);
 
-																															// ImGui::ImageButton(const char* str_id, ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& bg_col, const ImVec4& tint_col)
 				if (const float size = ImGui::GetContentRegionAvail().x; ImGui::ImageButton("expressionButton", (ImTextureID)expressions[i].texture.id, ImVec2(size, size), uv0, uv1, expressions[i].backgroundColor , ImVec4(1, 1, 1, 1))) {
 					expression_click(&expressions[i]);
-					std::cout << "pressed button " << i << std::endl;
 				}
 				ImGui::PopID();
 
@@ -199,12 +199,35 @@ void draw_ui() {
 	ImGui::SameLine();
 
 	ImGui::BeginChild("##rightPane", ImVec2(0, 0), false);
+
+
+	const float footerH = ImGui::GetFrameHeightWithSpacing();
+	ImVec2 avail = ImGui::GetContentRegionAvail();
+
+	ImGui::BeginChild("##imageArea", ImVec2(avail.x, avail.y - footerH), false);
+	{
+		ImVec2 imgAvail = ImGui::GetContentRegionAvail();
+		float side = std::max(0.0f, std::min(imgAvail.x, imgAvail.y));
+		ImVec2 cur = ImGui::GetCursorPos();
+		ImVec2 offset = ImVec2((imgAvail.x - side) * 0.5f, (imgAvail.y - side) * 0.5f);
+		ImGui::SetCursorPos(ImVec2(cur.x + offset.x, cur.y + offset.y));
+
+		ImGui::Image(
+			(ImTextureID)renderedDokiTexture,
+			ImVec2(side, side),
+			ImVec2(renderedDokiBounds.u1, renderedDokiBounds.v1),
+			ImVec2(renderedDokiBounds.u0, renderedDokiBounds.v0),
+			ImVec4(1, 1, 1, 1),
+			ImVec4(0, 0, 0, 0)
+		);
+	}
+	ImGui::EndChild();
+
 	ImGui::SetNextItemWidth(150);
 	if (ImGui::Combo("##characterSelector", &girl, girlsvDISP, girlsc)) {
 		init_doki();
 	}
 	ImGui::EndChild();
-
 
 	ImGui::End();
 }

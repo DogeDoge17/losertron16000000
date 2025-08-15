@@ -36,16 +36,22 @@ int main(int argc, char** argv) {
 		IMGUI_CHECKVERSION(); 
 		ImGui::CreateContext();
 		const ImGuiIO& io = ImGui::GetIO();
-		const ImVec2 windowSize = io.DisplaySize;
 
 		ImGui::StyleColorsDark();
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 330 core");
 
+		init_doki_off_screen();
 		init_toutes_dokis();
 		init_doki();
-		while (!glfwWindowShouldClose(window)) {
+
+
+//	placing_prepare();
+//	place_image(selectedExpressions.front()->texture.id);
+//	placing_finish();
+
+	while (!glfwWindowShouldClose(window)) {
 				glfwPollEvents();
 
 				ImGui_ImplOpenGL3_NewFrame();
