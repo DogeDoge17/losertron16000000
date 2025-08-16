@@ -5,12 +5,30 @@ project(losertron)
 
 set(CMAKE_CXX_STANDARD 20)
 
+if (LINUX)
+# generate icon header for linux
+find_program(XXD_EXECUTABLE xxd REQUIRED)
+set(ICON_PNG ${CMAKE_SOURCE_DIR}/appicon.png)
+set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
+set(ICON_HEADER ${GENERATED_DIR}/appicon.h)
+
+add_custom_command(
+        OUTPUT ${ICON_HEADER}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_DIR}
+        COMMAND ${XXD_EXECUTABLE} -n appicon_png -i ${ICON_PNG} ${ICON_HEADER}
+        DEPENDS ${ICON_PNG}
+        COMMENT "Embedding ${ICON_PNG} -> ${ICON_HEADER}"
+        VERBATIM
+)
+endif()
+
 # GLFW
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG 3.3.8
 )
+
 #set(GLFW_USE_WAYLAND ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
@@ -25,7 +43,6 @@ FetchContent_Declare(
     GIT_TAG v1.89.2 
 )
 FetchContent_MakeAvailable(imgui)
-
 
 file(GLOB IMGUI_SRC
     ${imgui_SOURCE_DIR}/*.cpp
@@ -49,8 +66,10 @@ set(SOURCE_FILES
     doki.hpp
     bitmap.cpp
     bitmap.hpp
+        vendor/stb_image_write.h
 )
-add_executable(losertron ${SOURCE_FILES})
+
+add_executable(losertron ${SOURCE_FILES} ${ICON_HEADER})
 target_link_libraries(losertron PUBLIC imgui glfw glad)
 target_include_directories(losertron PUBLIC
         vendor
@@ -59,6 +78,7 @@ target_include_directories(losertron PUBLIC
         ${imgui_SOURCE_DIR}/backends
         ${glfw_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/glad/include
+        ${GENERATED_DIR}
 )
 
 # move sprites to output

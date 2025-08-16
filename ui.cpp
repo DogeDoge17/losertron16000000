@@ -87,13 +87,37 @@ void update_warnings(const DokiExpression* item) {
     }
 }
 
+void toggle_of_type(DokiExpression* item) {
+	GirlieFolder* folder = nullptr;
+	for (auto& folderr : girlDefaults.Folders) {
+		if (folderr.Name == item->category) {
+			folder = &folderr;
+			break;
+		}
+	}
+
+	const int max = std::ranges::any_of(folder->Bypass, [&](const std::string& bypass) { return item->uri.string().find(bypass) != std::string::npos; }) ? 1 : folder->Max;
+	int itemCount = std::count_if(selectedExpressions.begin(), selectedExpressions.end(), [&](const DokiExpression* expr) { return expr->category == item->category; });
+
+	for (int i = 0; i <= itemCount - max; i++) {
+		auto location = std::ranges::find_if(selectedExpressions, [&](const DokiExpression* expr) { return expr->category == item->category; });
+		if (location != selectedExpressions.end()) {
+			(*location)->backgroundColor = ImColor(0, 0, 0, 0);
+			selectedExpressions.erase(location);
+		}
+	}
+
+
+
+}
+
 /// <summary>
 /// Toggles the pressed expression between selected and not selected
 /// </summary>
 void expression_click(DokiExpression* expression)
 {
 	if(const auto location = std::ranges::find(selectedExpressions, expression); location == selectedExpressions.end()) {
-		// ToggleOfType(item);
+		toggle_of_type(expression);
 		selectedExpressions.push_back(expression);
 		expression->backgroundColor = GREEN;
 		update_warnings(expression);
@@ -218,15 +242,26 @@ void draw_ui() {
 			ImVec2(renderedDokiBounds.u1, renderedDokiBounds.v1),
 			ImVec2(renderedDokiBounds.u0, renderedDokiBounds.v0),
 			ImVec4(1, 1, 1, 1),
-			ImVec4(0, 0, 0, 0)
+			ImVec4(1, 0, 0, 0)
 		);
 	}
 	ImGui::EndChild();
 
-	ImGui::SetNextItemWidth(150);
+	ImVec2 imgAvail = ImGui::GetContentRegionAvail();
+	const float widthItem = ImGui::GetContentRegionAvail().x / 3;
+
+	ImGui::SetNextItemWidth(widthItem);
 	if (ImGui::Combo("##characterSelector", &girl, girlsvDISP, girlsc)) {
 		init_doki();
 	}
+
+	// gap
+	ImGui::SameLine(0, widthItem);
+	ImGui::SetNextItemWidth(widthItem);
+	if (ImGui::Button("Save Doki", ImVec2(widthItem, 0))) {
+		save_doki();
+	}
+
 	ImGui::EndChild();
 
 	ImGui::End();

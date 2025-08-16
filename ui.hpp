@@ -1,12 +1,9 @@
 #pragma once
 #include <imgui.h>
 #include <iostream>
-#include <imgui.h>
-
 #include "doki.hpp"
 
 struct DokiExpression;
-
 
 const ImColor GREEN = ImColor(0, 128, 0, 255);
 const ImColor YELLOW = ImColor(255, 255, 0, 255);

@@ -1,6 +1,21 @@
 #include "bitmap.hpp"
 #include <GL/gl.h>
 
+#include "doki.hpp"
+
+#if defined(_WIN32)
+  #include <windows.h>
+  #include <shlobj.h>      // SHGetKnownFolderPath
+  #include <knownfolders.h>
+  #include <memory>
+#else
+  #include <pwd.h>
+  #include <sys/types.h>
+  #include <unistd.h>
+#endif
+
+#include "json.hpp"
+
 GLuint dokiFbo;
 
 float quadVertices[] = {
@@ -24,6 +39,67 @@ void print_gl_errors()
 	while ((err = glGetError()) != GL_NO_ERROR) {
 		std::cerr << "OpenGL error: " << err << std::endl;
 	}
+}
+std::filesystem::path user_home_directory() {
+#if defined(_WIN32)
+	PWSTR wpath = nullptr;
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Profile, 0, nullptr, &wpath);
+	if (SUCCEEDED(hr) && wpath) {
+		std::filesystem::path p = std::filesystem::path(wpath);
+		CoTaskMemFree(wpath);
+		return p;
+	}
+	if (wpath) CoTaskMemFree(wpath);
+
+	if (const wchar_t* up = _wgetenv(L"USERPROFILE"); up && *up) {
+		return std::filesystem::path(up);
+	}
+	const wchar_t* hd = _wgetenv(L"HOMEDRIVE");
+	const wchar_t* hp = _wgetenv(L"HOMEPATH");
+	if (hd && *hd && hp && *hp) {
+		return std::filesystem::path(std::wstring(hd) + std::wstring(hp));
+	}
+	throw std::runtime_error("Could not determine user home directory on Windows");
+#else
+	if (const char* home = std::getenv("HOME"); home && *home) {
+		return std::filesystem::path(home);
+	}
+
+	if (struct passwd* pw = getpwuid(getuid()); pw && pw->pw_dir && *pw->pw_dir) {
+		return std::filesystem::path(pw->pw_dir);
+	}
+	throw std::runtime_error("Could not determine user home directory on POSIX");
+#endif
+}
+
+
+void save_doki() {
+	constexpr int width = 960;
+	constexpr int height = 960;
+	uint8_t *pixels = new uint8_t[width * height * 4];
+	glBindFramebuffer(GL_FRAMEBUFFER, dokiFbo);
+	glReadPixels(0, 0, 960, 960, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+	std::filesystem::path basePath = user_home_directory() / "Pictures/losertron";
+	std::filesystem::path dokiPath;
+
+	std::string girlS = std::string(girlsv[girl])+"-";
+	int i = 0;
+	for (; std::filesystem::exists(dokiPath = (basePath / (girlS + std::to_string(i) + ".png"))); i++);
+
+	std::cout << "Saving doki to: " << dokiPath << std::endl;
+
+	if (!std::filesystem::exists(basePath)) {
+		std::filesystem::create_directories(basePath);
+	}
+
+
+	(void)stbi_write_png(dokiPath.c_str() , width, height, 4, pixels, width * 4);
+
+	delete[] pixels;
+	glBindVertexArray(0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void placing_prepare() {
@@ -250,7 +326,13 @@ Bounds crop_image(const uint8_t* pixels, const int& width, const int& height) {
 				maxW = std::min(width - 1, maxW + extendRight);
 		}
 
-		return Bounds(static_cast<float>(maxW) / static_cast<float>(width), static_cast<float>(maxH) / static_cast<float>(height),
-				static_cast<float>(minW) / static_cast<float>(width), static_cast<float>(minH) / static_cast<float>(height));
+	Bounds bounds(static_cast<float>(maxW) / static_cast<float>(width), static_cast<float>(maxH) / static_cast<float>(height),
+			static_cast<float>(minW) / static_cast<float>(width), static_cast<float>(minH) / static_cast<float>(height));;
 
+	bounds.x = minW;
+	bounds.y = minH;
+	bounds.width = cropWidth + 1;
+	bounds.height = cropHeight + 1;
+
+	return bounds;
 }

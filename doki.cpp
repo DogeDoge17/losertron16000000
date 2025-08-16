@@ -116,7 +116,7 @@ void load_image_data() {
 		}
 	}
 
-	//todo: ensure atomic
+	// todo: ensure atomic
 	std::vector<std::unique_ptr<std::pair<DokiExpression *, uint8_t *> > > pixels = std::vector<std::unique_ptr<
 		std::pair<DokiExpression *, uint8_t *> > >();
 

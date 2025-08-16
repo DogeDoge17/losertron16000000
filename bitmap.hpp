@@ -5,9 +5,15 @@
 #include <iostream>
 #include <stb_image.h>
 #include "imgui.h"
+#include <stb_image_write.h>
+
 
 struct Bounds {
     float u0, v0, u1, v1;
+    uint x, y, width, height;
+    Bounds(float u0 = 0.0f, float v0 = 0.0f, float u1 = 1.0f, float v1 = 1.0f)
+        : u0(u0), v0(v0), u1(u1), v1(v1) {}
+
 };
 
 struct Texture {
@@ -19,6 +25,7 @@ struct Texture {
 inline GLuint renderedDokiTexture;
 inline Bounds renderedDokiBounds = {0.0f, 0.0f, 1.0f, 1.0f};
 
+void save_doki();
 void placing_prepare();
 void placing_finish();
 void place_image(GLuint texture, ImVec2 position = ImVec2(0, 0));
