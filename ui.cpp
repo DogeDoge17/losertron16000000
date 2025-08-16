@@ -106,9 +106,6 @@ void toggle_of_type(DokiExpression* item) {
 			selectedExpressions.erase(location);
 		}
 	}
-
-
-
 }
 
 /// <summary>
@@ -161,7 +158,7 @@ void draw_expressions(const float room) {
 
 		ImGui::BeginChild("expressions", ImVec2(0, 0), true, ImGuiWindowFlags_ChildWindow);
 		std::vector<DokiExpression> &expressions = all_expressions[expressionGroups[selectedExpressionGroup]];
-
+    // TODO: change zoom to predefined column sizes
 		const float targetSize = 100.0f * zoom;
 		const float spacingX = ImGui::GetStyle().ItemSpacing.x;
 
