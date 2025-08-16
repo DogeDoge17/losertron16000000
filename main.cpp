@@ -8,7 +8,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "doki.hpp"
 #include "ui.hpp"
+
+#if defined(linux)
 #include "appicon.h"
+#elif defined(_WIN32)
+#include<windows.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
 
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {	
@@ -35,8 +42,101 @@ void load_app_icon(GLFWwindow* window) {
 	} else {
 		std::cerr << "Failed to load embedded icon\n";
 	}
-#elif defined(__WIN32__)
+#elif defined(_WIN32)
+	
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(101)); 
 
+	HICON hIconBig = LoadIcon(hInstance, MAKEINTRESOURCE(101));
+	HICON hIconSmall = (HICON)LoadImage(hInstance,
+		MAKEINTRESOURCE(101),
+		IMAGE_ICON,
+		GetSystemMetrics(SM_CXSMICON),
+		GetSystemMetrics(SM_CYSMICON),
+		LR_DEFAULTCOLOR);
+
+	if (hIconBig || hIconSmall) {
+		HWND hwnd = glfwGetWin32Window(window);
+		if (hwnd) {
+			if (hIconBig)
+				SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
+			if (hIconSmall)
+				SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+		}
+	}
+
+	if (hIcon) {
+		
+		HWND hwnd = glfwGetWin32Window(window);
+		if (hwnd) {
+			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+			SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+		}
+
+		ICONINFO iconInfo;
+		if (GetIconInfo(hIcon, &iconInfo)) {
+			BITMAP bmp;
+			if (GetObject(iconInfo.hbmColor, sizeof(BITMAP), &bmp)) {
+				int width = bmp.bmWidth;
+				int height = bmp.bmHeight;
+
+				
+				HDC hdc = CreateCompatibleDC(NULL);
+				if (hdc) {
+		
+					BITMAPINFO bmi;
+					ZeroMemory(&bmi, sizeof(BITMAPINFO));
+					bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+					bmi.bmiHeader.biWidth = width;
+					bmi.bmiHeader.biHeight = -height; 
+					bmi.bmiHeader.biPlanes = 1;
+					bmi.bmiHeader.biBitCount = 32;
+					bmi.bmiHeader.biCompression = BI_RGB;
+
+					BYTE* bits = nullptr;
+					HBITMAP hbmp = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void**)&bits, NULL, 0);
+
+					if (hbmp && bits) {
+						
+						HBITMAP hOldBmp = (HBITMAP)SelectObject(hdc, hbmp);
+			
+						DrawIconEx(hdc, 0, 0, hIcon, width, height, 0, NULL, DI_NORMAL);						
+						unsigned char* pixels = new unsigned char[width * height * 4];
+					
+						for (int y = 0; y < height; y++) {
+							for (int x = 0; x < width; x++) {
+								int pixelPos = (y * width + x) * 4;
+								int dibPos = (y * width + x) * 4;
+
+								pixels[pixelPos + 0] = bits[dibPos + 2]; // R <- B
+								pixels[pixelPos + 1] = bits[dibPos + 1]; // G <- G
+								pixels[pixelPos + 2] = bits[dibPos + 0]; // B <- R
+								pixels[pixelPos + 3] = bits[dibPos + 3]; // A <- A
+							}
+						}
+
+						GLFWimage img = { 0 };
+						img.width = width;
+						img.height = height;
+						img.pixels = pixels;
+						glfwSetWindowIcon(window, 1, &img);
+
+						delete[] pixels;
+						SelectObject(hdc, hOldBmp);
+						DeleteObject(hbmp);
+					}
+					DeleteDC(hdc);
+				}
+			}
+
+			if (iconInfo.hbmColor) DeleteObject(iconInfo.hbmColor);
+			if (iconInfo.hbmMask) DeleteObject(iconInfo.hbmMask);
+		}
+		DestroyIcon(hIcon);
+	}
+	else {
+		std::cerr << "Failed to load icon resource\n";
+	}
 #endif
 }
 

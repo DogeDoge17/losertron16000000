@@ -1,6 +1,6 @@
 #include "bitmap.hpp"
 #include <GL/gl.h>
-
+#include <algorithm> // Add this include for std::max
 #include "doki.hpp"
 
 #if defined(_WIN32)
@@ -94,7 +94,7 @@ void save_doki() {
 	}
 
 
-	(void)stbi_write_png(dokiPath.c_str() , width, height, 4, pixels, width * 4);
+	(void)stbi_write_png(dokiPath.string().c_str(), width, height, 4, pixels, width * 4);
 
 	delete[] pixels;
 	glBindVertexArray(0);
@@ -315,15 +315,20 @@ Bounds crop_image(const uint8_t* pixels, const int& width, const int& height) {
 				const int diff = cropWidth - cropHeight;
 				const int extendTop = diff / 2;
 				const int extendBottom = diff - extendTop;
-				minH = std::max(0, minH - extendBottom);
-				maxH = std::min(height - 1, maxH + extendTop);
+				//minH = std::max(0, minH - extendBottom);
+				minH = 0 > minH - extendBottom ? 0 : minH - extendBottom;
+       
+				//maxH = std::min(height - 1, maxH + extendTop);
+				maxH = height - 1 < maxH + extendTop ? height - 1 : maxH + extendTop;
 		}
 		else if (cropHeight > cropWidth) {
 				const int diff = cropHeight - cropWidth;
 				const int extendLeft = diff / 2;
 				const int extendRight = diff - extendLeft;
-				minW = std::max(0, minW - extendLeft);
-				maxW = std::min(width - 1, maxW + extendRight);
+				minW = 0 > minW - extendLeft ? 0 : minW - extendLeft;
+				maxW = width - 1 < maxW + extendRight ? width - 1: maxW + extendRight;
+				// minW = std::max(0, minW - extendLeft);
+				// maxW = std::min(width - 1, maxW + extendRight);
 		}
 
 	Bounds bounds(static_cast<float>(maxW) / static_cast<float>(width), static_cast<float>(maxH) / static_cast<float>(height),

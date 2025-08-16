@@ -20,6 +20,8 @@ add_custom_command(
         COMMENT "Embedding ${ICON_PNG} -> ${ICON_HEADER}"
         VERBATIM
 )
+elseif(WIN32)
+    set(RC_FILE ${CMAKE_SOURCE_DIR}/app.rc)
 endif()
 
 # GLFW
@@ -69,7 +71,13 @@ set(SOURCE_FILES
         vendor/stb_image_write.h
 )
 
-add_executable(losertron ${SOURCE_FILES} ${ICON_HEADER})
+if(WIN32)
+    add_executable(losertron WIN32 ${SOURCE_FILES} ${RC_FILE})
+    target_link_options(losertron PRIVATE "/ENTRY:mainCRTStartup")
+else()
+    add_executable(losertron ${SOURCE_FILES} ${ICON_HEADER})
+endif()
+
 target_link_libraries(losertron PUBLIC imgui glfw glad)
 target_include_directories(losertron PUBLIC
         vendor
