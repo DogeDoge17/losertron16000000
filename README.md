@@ -1,3 +1,4 @@
 # ImLOSERTRON16000000
- being remade for linux (NOT DONE )
-![unfinished app](https://i.imgur.com/CTKH49S.png)
+ make the okdi doki literature club people like a gacha life game (they likle it when you playh dressup with them!)
+![finished app](https://github.com/user-attachments/assets/d36f3d94-ae83-4aa4-8b1a-c85ba89fb53d)
+
