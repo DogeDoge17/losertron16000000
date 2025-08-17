@@ -99,7 +99,7 @@ void load_image_data() {
 
 	size_t k = 0;
 
-	all_expressions = std::unordered_map<std::string, std::vector<DokiExpression> >();
+	all_expressions = std::unordered_map<std::string, std::vector<DokiExpression>>();
 	all_expressions.reserve(tabCount);
 	for (const auto &folder: std::filesystem::directory_iterator(std::filesystem::path("dokis") / girlsv[girl])) {
 		if (!folder.is_directory())
@@ -116,7 +116,6 @@ void load_image_data() {
 		}
 	}
 
-	// todo: ensure atomic
 	std::vector<std::unique_ptr<std::pair<DokiExpression *, uint8_t *> > > pixels = std::vector<std::unique_ptr<
 		std::pair<DokiExpression *, uint8_t *> > >();
 
@@ -145,7 +144,7 @@ void construct_doki() {
 	int natDownIndex = -1;
 	if (girlsv[girl][0] == 'n') {
 		for (size_t i = 0; i < selectedExpressions.size(); i++) {
-			if (selectedExpressions[i]->uri.string().find("crossed") != std::string::npos) {
+			if (selectedExpressions[i]->uri.string().find("crossed(") != std::string::npos) {
 				natDownIndex = i;
 				break;
 			}

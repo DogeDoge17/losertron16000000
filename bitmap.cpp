@@ -1,11 +1,11 @@
 #include "bitmap.hpp"
 #include <GL/gl.h>
-#include <algorithm> // Add this include for std::max
+#include <algorithm>
 #include "doki.hpp"
 
 #if defined(_WIN32)
   #include <windows.h>
-  #include <shlobj.h>      // SHGetKnownFolderPath
+  #include <shlobj.h>
   #include <knownfolders.h>
   #include <memory>
 #else
@@ -33,13 +33,8 @@ unsigned int quadIndices[] = {
 GLuint VAO, VBO, EBO, program;
 GLint drawPositionLoc, textureLoc;
 
-void print_gl_errors()
-{
-	GLenum err;
-	while ((err = glGetError()) != GL_NO_ERROR) {
-		std::cerr << "OpenGL error: " << err << std::endl;
-	}
-}
+/// Fetches the user's home directory path
+/// @return The path to the user's home directory depending on the operating system
 std::filesystem::path user_home_directory() {
 #if defined(_WIN32)
 	PWSTR wpath = nullptr;
@@ -71,7 +66,6 @@ std::filesystem::path user_home_directory() {
 	throw std::runtime_error("Could not determine user home directory on POSIX");
 #endif
 }
-
 
 void save_doki() {
 	constexpr int width = 960;
@@ -115,11 +109,9 @@ void placing_prepare() {
 
 	glBindVertexArray(VAO);
 	glUseProgram(program);
-	print_gl_errors();
 }
 
 void placing_finish() {
-
 	uint8_t *pixels = new uint8_t[960 * 960 * 4];
 	glBindFramebuffer(GL_FRAMEBUFFER, dokiFbo);
 	glReadPixels(0, 0, 960, 960, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
@@ -132,6 +124,7 @@ void placing_finish() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+
 void place_image(GLuint texture, ImVec2 position) {
     glUniform1i(textureLoc, 0);
 	glUniform2i(drawPositionLoc, static_cast<int>(position.x), static_cast<int>(position.y));
@@ -140,10 +133,12 @@ void place_image(GLuint texture, ImVec2 position) {
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-    print_gl_errors();
 }
 
-
+/// Creates a shader of the specified type and compiles it from the given source code
+/// @param type the type of shader (GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, etc.)
+/// @param source the source code of the shader
+/// @return the ID of the compiled shader
 GLuint create_shader(GLenum type, const char* source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
@@ -178,7 +173,7 @@ void init_doki_off_screen() {
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// set up vertex array and buffers
+	// vertex array and buffers
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -252,7 +247,6 @@ void init_doki_off_screen() {
 	if (drawPositionLoc != -1) glUniform2i(drawPositionLoc, 0, 0);
 	glUseProgram(0);
 
-	print_gl_errors();
 }
 
 GLuint texture_send(const uint8_t* pixels, const int& width, const int& height) {
@@ -292,6 +286,7 @@ bool load_texture(const std::filesystem::path& path, uint8_t*& pixels, int& widt
 		pixels = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
 		return pixels;
 }
+
 
 Bounds crop_image(const uint8_t* pixels, const int& width, const int& height) {
 		int minW = width, minH = height, maxW = 0, maxH = 0;

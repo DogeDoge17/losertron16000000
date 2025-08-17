@@ -20,14 +20,11 @@
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {	
 		if ((key == GLFW_KEY_EQUAL) && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-				zoom += 0.15; 
+      up_press(); 
 		}
 
 		if ((key == GLFW_KEY_MINUS) && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-				zoom -= 0.15; 
-		}
-		if (zoom < 0.001) {
-				zoom = 0.001;
+      down_press();
 		}
 }
 

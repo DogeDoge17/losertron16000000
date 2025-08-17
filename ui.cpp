@@ -1,6 +1,38 @@
 #include "ui.hpp"
 
+void up_press() {
+	if (zoomMode == Columns) {
+		columns++;
+		zoom -= 0.15;
+	} else {
+		columns --;
+		zoom += 0.15;
+	}
+	if (zoom < 0.001) {
+		zoom = 0.001;
+	}
+	if (columns <= 0) {
+		columns = 1;
+	}
+}
 
+void down_press() {
+	if (zoomMode == Columns) {
+		columns--;
+		zoom += 0.15;
+	} else {
+		columns++;
+		zoom -= 0.15;
+	}
+
+	if (zoom < 0.001) {
+		zoom = 0.001;
+	}
+	if (columns <= 0) {
+		columns = 1;
+	}
+}
+/// anything but real work :cat-laugh:
 void update_warnings(const DokiExpression* item) {
 	std::vector<std::string> groupIds;
     if (item == nullptr) {
@@ -99,6 +131,9 @@ void toggle_of_type(DokiExpression* item) {
 	const int max = std::ranges::any_of(folder->Bypass, [&](const std::string& bypass) { return item->uri.string().find(bypass) != std::string::npos; }) ? 1 : folder->Max;
 	int itemCount = std::count_if(selectedExpressions.begin(), selectedExpressions.end(), [&](const DokiExpression* expr) { return expr->category == item->category; });
 
+	if (max <= 0)
+		return;
+
 	for (int i = 0; i <= itemCount - max; i++) {
 		auto location = std::ranges::find_if(selectedExpressions, [&](const DokiExpression* expr) { return expr->category == item->category; });
 		if (location != selectedExpressions.end()) {
@@ -158,15 +193,16 @@ void draw_expressions(const float room) {
 
 		ImGui::BeginChild("expressions", ImVec2(0, 0), true, ImGuiWindowFlags_ChildWindow);
 		std::vector<DokiExpression> &expressions = all_expressions[expressionGroups[selectedExpressionGroup]];
+
     // TODO: change zoom to predefined column sizes
 		const float targetSize = 100.0f * zoom;
 		const float spacingX = ImGui::GetStyle().ItemSpacing.x;
 
-		const int columns = std::clamp(
+		const int columns2 = zoomMode == Columns ? columns : std::clamp(
 			static_cast<int>((ImGui::GetContentRegionAvail().x + spacingX) / (targetSize + spacingX)), 1,
 			static_cast<int>(expressions.size()));
 
-		if (ImGui::BeginTable("expressionGrid", columns, ImGuiTableFlags_SizingStretchSame)) {
+		if (ImGui::BeginTable("expressionGrid", columns2, ImGuiTableFlags_SizingStretchSame)) {
 			for (int i = 0; i < expressions.size(); i++) {
 				ImGui::TableNextColumn();
 
@@ -182,8 +218,8 @@ void draw_expressions(const float room) {
 				if ((i + 1) % columns != 0)
 					ImGui::SameLine();
 			}
-		}
 		ImGui::EndTable();
+		}
 
 		ImGui::EndChild();
 		ImGui::GetStyle().ItemSpacing = originalPadding;
@@ -244,7 +280,6 @@ void draw_ui() {
 	}
 	ImGui::EndChild();
 
-	ImVec2 imgAvail = ImGui::GetContentRegionAvail();
 	const float widthItem = ImGui::GetContentRegionAvail().x / 3;
 
 	ImGui::SetNextItemWidth(widthItem);
@@ -252,8 +287,25 @@ void draw_ui() {
 		init_doki();
 	}
 
-	// gap
-	ImGui::SameLine(0, widthItem);
+	ImGui::SameLine(0);
+	if (ImGui::Button("-", ImVec2(widthItem * .10, 0))) {
+		down_press();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("+", ImVec2(widthItem * .10,0))) {
+		up_press();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button(zoomModeNames[zoomMode], ImVec2(widthItem * .50, 0))) {
+		zoomMode = (zoomMode + 1) % 2;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button(std::to_string(zoomMode == ZoomModes::Columns ? columns : static_cast<int>(zoom * 100)).c_str(), ImVec2(widthItem * .3, 0))) {
+		columns = 3;
+		zoom = 1.0;
+	}
+
+	ImGui::SameLine();
 	ImGui::SetNextItemWidth(widthItem);
 	if (ImGui::Button("Save Doki", ImVec2(widthItem, 0))) {
 		save_doki();
