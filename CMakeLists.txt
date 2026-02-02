@@ -24,15 +24,22 @@ elseif(WIN32)
     set(RC_FILE ${CMAKE_SOURCE_DIR}/app.rc)
 endif()
 
-# GLFW
-FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.3.8
-)
+option(USE_SYSTEM_GLFW "Use system installed GLFW" OFF)
 
-#set(GLFW_USE_WAYLAND ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(glfw)
+# GLFW 
+if(USE_SYSTEM_GLFW)
+    find_package(glfw3 REQUIRED)
+    if(NOT TARGET glfw)
+        add_library(glfw ALIAS glfw3)
+    endif()
+else()
+    FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.3.8
+    )
+    FetchContent_MakeAvailable(glfw)
+endif()
 
 # Glad
 add_library(glad vendor/glad/src/glad.c)
