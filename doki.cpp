@@ -65,7 +65,6 @@ void load_defaults() {
 void load_image(DokiExpression *dokiExp, std::pair<DokiExpression *, uint8_t *> &loaded) {
 	uint8_t *pixels = nullptr;
 	load_texture(dokiExp->uri, pixels, dokiExp->texture.width, dokiExp->texture.height);
-	dokiExp->bounds = crop_image(pixels, dokiExp->texture.width, dokiExp->texture.height);
 
 	loaded.first = dokiExp;
 	loaded.second = pixels;
@@ -133,6 +132,10 @@ void load_image_data() {
 		if (loaded->second) {
 			loaded->first->texture.id = texture_send(loaded->second, loaded->first->texture.width,
 			                                         loaded->first->texture.height);
+			loaded->first->bounds = crop_image(loaded->first->texture.id,
+			                                  loaded->first->texture.width,
+			                                  loaded->first->texture.height,
+			                                  loaded->second);
 			stbi_image_free(loaded->second);
 		}
 	}
