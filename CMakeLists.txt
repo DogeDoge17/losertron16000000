@@ -1,12 +1,28 @@
 cmake_minimum_required(VERSION 3.15)
 include(FetchContent)
+include(GNUInstallDirs)
 
 project(losertron)
+
+set(DESKTOP_FILE ${CMAKE_CURRENT_BINARY_DIR}/losertron.desktop)
+file(GENERATE OUTPUT ${DESKTOP_FILE} CONTENT [=[
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Losertron16000000
+GenericName=Character Creator
+Comment=dress that girl up for me 5
+Exec=losertron
+Icon=losertron
+StartupWMClass=LOSERTRON16000000
+Terminal=false
+Categories=Game;Graphics;
+Keywords=ddlc;imgui;dressup;character;
+]=])
 
 set(CMAKE_CXX_STANDARD 20)
 
 if (LINUX)
-# generate icon header for linux
 find_program(XXD_EXECUTABLE xxd REQUIRED)
 set(ICON_PNG ${CMAKE_SOURCE_DIR}/appicon.png)
 set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
@@ -86,6 +102,7 @@ else()
 endif()
 
 target_link_libraries(losertron PUBLIC imgui glfw glad)
+target_compile_definitions(losertron PRIVATE LOSERTRON_DATA_DIR="${CMAKE_INSTALL_FULL_DATADIR}/losertron")
 target_include_directories(losertron PUBLIC
         vendor
         vendor/glad/include
@@ -110,3 +127,13 @@ else() # Linux
     find_package(OpenGL REQUIRED)
     target_link_libraries(losertron PRIVATE ${OPENGL_LIBRARIES} dl)
 endif()
+
+install(TARGETS losertron
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dokis
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/losertron)
+install(FILES ${DESKTOP_FILE}
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/appicon.png
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps
+    RENAME losertron.png)
