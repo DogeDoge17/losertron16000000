@@ -14,7 +14,7 @@ GenericName=Character Creator
 Comment=dress that girl up for me 5
 Exec=losertron
 Icon=losertron
-StartupWMClass=LOSERTRON16000000
+StartupWMClass=losertron
 Terminal=false
 Categories=Game;Graphics;
 Keywords=ddlc;imgui;dressup;character;
@@ -136,4 +136,7 @@ install(FILES ${DESKTOP_FILE}
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/appicon.png
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps
+    RENAME losertron.png)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/appicon.png
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps
     RENAME losertron.png)
