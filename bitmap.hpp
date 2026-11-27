@@ -63,3 +63,12 @@ bool load_texture(const std::filesystem::path& path,  uint8_t*& pixels, int& wid
 /// @param height the height of the image
 /// @return a Bounds object containing the uv coordinates and dimensions of the cropped image
 Bounds crop_image(const uint8_t* pixels, const int& width, const int& height);
+
+/// Crops the image to the bounds of the non-transparent pixels using compute shader when available.
+/// Falls back to CPU path when compute shaders are not supported or unavailable.
+/// @param texture the OpenGL texture ID containing image data
+/// @param width the width of the texture
+/// @param height the height of the texture
+/// @param fallbackPixels optional CPU pixel buffer used by fallback path
+/// @return a Bounds object containing the uv coordinates and dimensions of the cropped image
+Bounds crop_image(GLuint texture, const int& width, const int& height, const uint8_t* fallbackPixels = nullptr);

@@ -1,6 +1,8 @@
 #include "bitmap.hpp"
 #include <GL/gl.h>
 #include <algorithm>
+#include <array>
+#include <vector>
 #include "doki.hpp"
 
 #if defined(_WIN32)
@@ -32,6 +34,78 @@ unsigned int quadIndices[] = {
 
 GLuint VAO, VBO, EBO, program;
 GLint drawPositionLoc, textureLoc;
+
+GLuint cropComputeProgram = 0;
+GLuint cropBoundsSsbo = 0;
+bool cropComputeSupported = false;
+
+namespace {
+	Bounds bounds_from_extents(int minW, int minH, int maxW, int maxH, const int width, const int height) {
+		if (maxW < minW || maxH < minH) {
+			return Bounds();
+		}
+
+		const int cropHeight = maxH - minH;
+		const int cropWidth = maxW - minW;
+
+		if (cropWidth > cropHeight) {
+			const int diff = cropWidth - cropHeight;
+			const int extendTop = diff / 2;
+			const int extendBottom = diff - extendTop;
+			minH = 0 > minH - extendBottom ? 0 : minH - extendBottom;
+			maxH = height - 1 < maxH + extendTop ? height - 1 : maxH + extendTop;
+		} else if (cropHeight > cropWidth) {
+			const int diff = cropHeight - cropWidth;
+			const int extendLeft = diff / 2;
+			const int extendRight = diff - extendLeft;
+			minW = 0 > minW - extendLeft ? 0 : minW - extendLeft;
+			maxW = width - 1 < maxW + extendRight ? width - 1 : maxW + extendRight;
+		}
+
+		Bounds bounds(static_cast<float>(maxW) / static_cast<float>(width), static_cast<float>(maxH) / static_cast<float>(height),
+		             static_cast<float>(minW) / static_cast<float>(width), static_cast<float>(minH) / static_cast<float>(height));
+
+		bounds.x = minW;
+		bounds.y = minH;
+		bounds.width = static_cast<unsigned int>(maxW - minW + 1);
+		bounds.height = static_cast<unsigned int>(maxH - minH + 1);
+
+		return bounds;
+	}
+
+	bool crop_image_compute(GLuint texture, const int width, const int height, Bounds& outBounds) {
+		if (!cropComputeSupported || cropComputeProgram == 0 || cropBoundsSsbo == 0 || texture == 0) {
+			return false;
+		}
+
+		std::array<GLint, 4> initial = {width, height, -1, -1};
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, cropBoundsSsbo);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, static_cast<GLsizeiptr>(sizeof(GLint) * initial.size()), initial.data(), GL_DYNAMIC_DRAW);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cropBoundsSsbo);
+
+		glUseProgram(cropComputeProgram);
+		glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+
+		const GLuint groupX = static_cast<GLuint>((width + 15) / 16);
+		const GLuint groupY = static_cast<GLuint>((height + 15) / 16);
+		glDispatchCompute(groupX, groupY, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		std::array<GLint, 4> result{};
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, static_cast<GLsizeiptr>(sizeof(GLint) * result.size()), result.data());
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		glUseProgram(0);
+
+		if (result[2] < 0 || result[3] < 0) {
+			return false;
+		}
+
+		outBounds = bounds_from_extents(result[0], result[1], result[2], result[3], width, height);
+		return true;
+	}
+}
 
 /// Fetches the user's home directory path
 /// @return The path to the user's home directory depending on the operating system
@@ -112,13 +186,7 @@ void placing_prepare() {
 }
 
 void placing_finish() {
-	uint8_t *pixels = new uint8_t[960 * 960 * 4];
-	glBindFramebuffer(GL_FRAMEBUFFER, dokiFbo);
-	glReadPixels(0, 0, 960, 960, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	renderedDokiBounds = crop_image(pixels, 960, 960);
-	delete[] pixels;
+	renderedDokiBounds = crop_image(renderedDokiTexture, 960, 960, nullptr);
 
 	glBindVertexArray(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -247,6 +315,60 @@ void init_doki_off_screen() {
 	if (drawPositionLoc != -1) glUniform2i(drawPositionLoc, 0, 0);
 	glUseProgram(0);
 
+	if (GLAD_GL_ARB_compute_shader && GLAD_GL_ARB_shader_image_load_store && GLAD_GL_ARB_shader_storage_buffer_object) {
+		const char* computeShaderSource = R"(
+            #version 430 core
+            layout(local_size_x = 16, local_size_y = 16) in;
+
+            layout(binding = 0, rgba8) readonly uniform image2D srcImage;
+
+            layout(std430, binding = 1) buffer BoundsBuffer {
+                int minX;
+                int minY;
+                int maxX;
+                int maxY;
+            } boundsData;
+
+            void main() {
+                ivec2 px = ivec2(gl_GlobalInvocationID.xy);
+                ivec2 size = imageSize(srcImage);
+                if (px.x >= size.x || px.y >= size.y) {
+                    return;
+                }
+
+                vec4 c = imageLoad(srcImage, px);
+                if (c.a <= 0.0) {
+                    return;
+                }
+
+                atomicMin(boundsData.minX, px.x);
+                atomicMin(boundsData.minY, px.y);
+                atomicMax(boundsData.maxX, px.x);
+                atomicMax(boundsData.maxY, px.y);
+            }
+        )";
+
+		GLuint computeShader = create_shader(GL_COMPUTE_SHADER, computeShaderSource);
+		cropComputeProgram = glCreateProgram();
+		glAttachShader(cropComputeProgram, computeShader);
+		glLinkProgram(cropComputeProgram);
+
+		GLint success = 0;
+		glGetProgramiv(cropComputeProgram, GL_LINK_STATUS, &success);
+		if (!success) {
+			char infoLog[512];
+			glGetProgramInfoLog(cropComputeProgram, 512, nullptr, infoLog);
+			std::cerr << "Compute shader linking error: " << infoLog << std::endl;
+			glDeleteProgram(cropComputeProgram);
+			cropComputeProgram = 0;
+		} else {
+			glGenBuffers(1, &cropBoundsSsbo);
+			cropComputeSupported = cropBoundsSsbo != 0;
+		}
+
+		glDeleteShader(computeShader);
+	}
+
 }
 
 GLuint texture_send(const uint8_t* pixels, const int& width, const int& height) {
@@ -269,7 +391,7 @@ GLuint texture_send(const uint8_t* pixels, const int& width, const int& height) 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 		error = glGetError();
 		if (error != GL_NO_ERROR) {
@@ -303,36 +425,25 @@ Bounds crop_image(const uint8_t* pixels, const int& width, const int& height) {
 				}
 		}
 
-		const int cropHeight = maxH - minH;
-		const int cropWidth = maxW - minW;
-
-		if (cropWidth > cropHeight) {
-				const int diff = cropWidth - cropHeight;
-				const int extendTop = diff / 2;
-				const int extendBottom = diff - extendTop;
-				//minH = std::max(0, minH - extendBottom);
-				minH = 0 > minH - extendBottom ? 0 : minH - extendBottom;
-       
-				//maxH = std::min(height - 1, maxH + extendTop);
-				maxH = height - 1 < maxH + extendTop ? height - 1 : maxH + extendTop;
-		}
-		else if (cropHeight > cropWidth) {
-				const int diff = cropHeight - cropWidth;
-				const int extendLeft = diff / 2;
-				const int extendRight = diff - extendLeft;
-				minW = 0 > minW - extendLeft ? 0 : minW - extendLeft;
-				maxW = width - 1 < maxW + extendRight ? width - 1: maxW + extendRight;
-				// minW = std::max(0, minW - extendLeft);
-				// maxW = std::min(width - 1, maxW + extendRight);
+		if (maxW == 0 && maxH == 0 && (minW == width || minH == height)) {
+			return Bounds();
 		}
 
-	Bounds bounds(static_cast<float>(maxW) / static_cast<float>(width), static_cast<float>(maxH) / static_cast<float>(height),
-			static_cast<float>(minW) / static_cast<float>(width), static_cast<float>(minH) / static_cast<float>(height));;
+		return bounds_from_extents(minW, minH, maxW, maxH, width, height);
+}
 
-	bounds.x = minW;
-	bounds.y = minH;
-	bounds.width = cropWidth + 1;
-	bounds.height = cropHeight + 1;
+Bounds crop_image(GLuint texture, const int& width, const int& height, const uint8_t* fallbackPixels) {
+	Bounds gpuBounds;
+	if (crop_image_compute(texture, width, height, gpuBounds)) {
+		return gpuBounds;
+	}
 
-	return bounds;
+	if (fallbackPixels != nullptr) {
+		return crop_image(fallbackPixels, width, height);
+	}
+
+	std::vector<uint8_t> pixels(static_cast<size_t>(width) * static_cast<size_t>(height) * 4);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	return crop_image(pixels.data(), width, height);
 }

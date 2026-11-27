@@ -1,5 +1,33 @@
 #include "doki.hpp"
 #include <cstdint>
+#include <cstdlib>
+
+namespace {
+std::filesystem::path get_dokis_root() {
+	if (const char* envPath = std::getenv("LOSERTRON_DOKIS_DIR"); envPath && envPath[0] != '\0') {
+		std::filesystem::path candidate(envPath);
+		if (std::filesystem::exists(candidate) && std::filesystem::is_directory(candidate)) {
+			return candidate;
+		}
+	}
+
+#ifdef LOSERTRON_DATA_DIR
+	{
+		std::filesystem::path installed = std::filesystem::path(LOSERTRON_DATA_DIR) / "dokis";
+		if (std::filesystem::exists(installed) && std::filesystem::is_directory(installed)) {
+			return installed;
+		}
+	}
+#endif
+
+	std::filesystem::path local = std::filesystem::current_path() / "dokis";
+	if (std::filesystem::exists(local) && std::filesystem::is_directory(local)) {
+		return local;
+	}
+
+	return "dokis";
+}
+}
 
 void sort_expressions() {
 	// var folderIndexMap = _girlDefaults.Folders.ToDictionary(folder => folder.Name, folder => folder.ZIndex);
@@ -25,7 +53,7 @@ void sort_expressions() {
 
 void load_defaults() {
 	try {
-		std::ifstream file(std::filesystem::path("dokis") / girlsv[girl] / "defaults.json");
+		std::ifstream file(get_dokis_root() / girlsv[girl] / "defaults.json");
 		if (!file.is_open()) {
 			throw std::runtime_error("Could not open JSON file.");
 		}
@@ -65,7 +93,6 @@ void load_defaults() {
 void load_image(DokiExpression *dokiExp, std::pair<DokiExpression *, uint8_t *> &loaded) {
 	uint8_t *pixels = nullptr;
 	load_texture(dokiExp->uri, pixels, dokiExp->texture.width, dokiExp->texture.height);
-	dokiExp->bounds = crop_image(pixels, dokiExp->texture.width, dokiExp->texture.height);
 
 	loaded.first = dokiExp;
 	loaded.second = pixels;
@@ -85,7 +112,7 @@ void load_image_data() {
 				glDeleteTextures(1, &expression.texture.id);
 	}
 
-	auto dirIter = std::filesystem::directory_iterator(std::filesystem::path("dokis") / girlsv[girl]);
+	auto dirIter = std::filesystem::directory_iterator(get_dokis_root() / girlsv[girl]);
 
 	tabCount = std::count_if(
 		begin(dirIter),
@@ -101,7 +128,7 @@ void load_image_data() {
 
 	all_expressions = std::unordered_map<std::string, std::vector<DokiExpression>>();
 	all_expressions.reserve(tabCount);
-	for (const auto &folder: std::filesystem::directory_iterator(std::filesystem::path("dokis") / girlsv[girl])) {
+	for (const auto &folder: std::filesystem::directory_iterator(get_dokis_root() / girlsv[girl])) {
 		if (!folder.is_directory())
 			continue;
 		std::string expressionName = folder.path().filename().string();
@@ -133,6 +160,10 @@ void load_image_data() {
 		if (loaded->second) {
 			loaded->first->texture.id = texture_send(loaded->second, loaded->first->texture.width,
 			                                         loaded->first->texture.height);
+			loaded->first->bounds = crop_image(loaded->first->texture.id,
+			                                  loaded->first->texture.width,
+			                                  loaded->first->texture.height,
+			                                  loaded->second);
 			stbi_image_free(loaded->second);
 		}
 	}
@@ -184,7 +215,7 @@ void init_toutes_dokis() {
 	//girlPicker.SelectedIndexChanged += ReinitDoki;
 	//girlPicker.SelectedIndex = girlPicker.Items.IndexOf(_girl.First().ToString().ToUpper() + _girl.Substring(1));
 
-	auto dirIter = std::filesystem::directory_iterator("dokis");
+	auto dirIter = std::filesystem::directory_iterator(get_dokis_root());
 
 	girlsc = static_cast<int>(std::count_if(
 		begin(dirIter),
@@ -196,7 +227,7 @@ void init_toutes_dokis() {
 	girlsvDISP = static_cast<char **>(malloc(sizeof(char *) * girlsc));
 
 	int i = 0;
-	for (const auto &dir: std::filesystem::directory_iterator("dokis")) {
+	for (const auto &dir: std::filesystem::directory_iterator(get_dokis_root())) {
 		if (i > girlsc)
 			break;
 

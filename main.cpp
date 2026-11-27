@@ -9,7 +9,7 @@
 #include "doki.hpp"
 #include "ui.hpp"
 
-#if defined(linux)
+#if defined(__linux__)
 #include "appicon.h"
 #elif defined(_WIN32)
 #include<windows.h>
@@ -29,7 +29,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 }
 
 void load_app_icon(GLFWwindow* window) {
-#if defined (linux)
+#if defined(__linux__)
 	GLFWimage img = { 0 };
 	int comp = 4;
 	img.pixels = stbi_load_from_memory(appicon_png, static_cast<int>(appicon_png_len), &img.width, &img.height, &comp, comp);
@@ -139,6 +139,15 @@ void load_app_icon(GLFWwindow* window) {
 
 int main(int argc, char** argv) {
 	glfwInit();
+	#ifdef GLFW_WAYLAND_APP_ID
+	glfwWindowHintString(GLFW_WAYLAND_APP_ID, "losertron");
+	#endif
+	#ifdef GLFW_X11_CLASS_NAME
+	glfwWindowHintString(GLFW_X11_CLASS_NAME, "losertron");
+	#endif
+	#ifdef GLFW_X11_INSTANCE_NAME
+	glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "losertron");
+	#endif
 	GLFWwindow* window = glfwCreateWindow(800, 450, "LOSERTRON16000000", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
